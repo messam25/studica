@@ -303,5 +303,31 @@ studica/
 | **"Could not set unknown property 'address'"** | The deploy block has an `address = "10.12.34.2"` (or similar) line. Remove it — the standard RoboRIO target doesn’t support `address`. Keep only `team` and `debug` in the `roborio { }` block. |
 | Plugin / Gradle error after VMX conversion | Run **WPILib: Deploy Robot Code** from inside WPILib VS Code instead of the terminal |
 | Robot doesn't move | Verify **Robot Code** + **Joysticks** are green in Control Station |
+| **UnsupportedClassVersionError (61.0 vs 55.0)** | VMX needs **Java 17**. Pi has no internet when hosting Wi‑Fi → see **Java 17 on VMX (no internet)** below. |
+| **IOException: wpiutiljni could not be loaded** | JAR was built for **roboRIO**, not VMX. Build a VMX JAR: open project in **WPILib VS Code**, run **Change the deploy target to VMX-Pi (from RoboRIO)**, then **WPILib: Build Robot Code**. Redeploy that JAR to the VMX. |
 | Wheels spin wrong way | Toggle `setInverted()` in `DriveTrain.java` |
 | Battery warning | Replace battery when voltage drops below 11.5 V |
+
+### Java 17 on VMX (no internet)
+
+When the VMX is the Wi‑Fi AP (`VMX-1234`), it often has no internet, so `apt install openjdk-17-jre-headless` fails. Install Java 17 manually:
+
+1. **On your Mac:** Download a Java 17 JRE for **Linux ARM 32-bit**:
+   - Go to [Adoptium Temurin 17](https://adoptium.net/temurin/releases/?version=17&os=linux&arch=arm&package=jre), choose **JRE**, **Linux**, **ARM** (32-bit), and download the **.tar.gz**.
+   - Or from [GitHub temurin17-binaries](https://github.com/adoptium/temurin17-binaries/releases) pick the asset like `OpenJDK17U-jre_*_aarch32_linux_*.tar.gz` (or `arm_linux_*` for 32-bit).
+
+2. **Copy to the VMX** (Mac connected to `VMX-1234`, or use your SSH key):
+   ```bash
+   scp OpenJDK17U-jre_*.tar.gz pi@10.12.34.2:/home/pi/
+   ```
+
+3. **On the VMX** (SSH `pi@10.12.34.2`):
+   ```bash
+   cd /home/pi
+   tar -xzf OpenJDK17U-jre_*.tar.gz
+   ```
+   That creates a folder like `jdk-17.0.x+7-jre`. Run the robot with it:
+   ```bash
+   /home/pi/jdk-17.0.*-jre/bin/java -jar /home/pi/deploy/frc.jar
+   ```
+   Or use the full path, e.g. `/home/pi/jdk-17.0.13+7-jre/bin/java -jar /home/pi/deploy/frc.jar`.
