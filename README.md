@@ -93,7 +93,23 @@ Plug in an Ethernet cable — the VMX is always at `172.22.11.2`.
 **Important:** This project is set up for **WPILib 2026** and targets **roboRIO** by default.  
 The VMX uses different SSH credentials (`pi` / `raspberry`), so **you must switch the deploy target to VMX-Pi once** before `gradlew deploy` will work.
 
+### Using Cursor (no WPILib VS Code)
+
+If you use **Cursor** instead of WPILib VS Code:
+
+1. **Option A — Try the VMX extension in Cursor**  
+   Cursor can run many VS Code extensions. Install **VMX-PI WPILib** from the Extensions view (`Ctrl+Shift+X` / `Cmd+Shift+X` → search **VMX**). If it installs, run **Change the deploy target to VMX-Pi (from RoboRIO)** from the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`). Then you can use `./gradlew deploy` from the terminal.
+
+2. **Option B — One-time switch in WPILib VS Code, then use Cursor**  
+   If the VMX extension doesn’t work in Cursor:
+   - Install [WPILib VS Code](https://docs.wpilib.org) and open this project in it once.
+   - Install the **VMX-PI WPILib** extension and run **Change the deploy target to VMX-Pi (from RoboRIO)**.
+   - Save and close WPILib VS Code. The `build.gradle` changes are saved.
+   - From then on, use **Cursor** for editing and run **`./gradlew deploy`** from the project folder in a terminal (see below). No need to open WPILib VS Code again unless you create a new project or reset the deploy target.
+
 ### One-time: Switch to VMX-Pi (required for terminal deploy)
+
+If you use WPILib VS Code:
 
 1. Open this project in **WPILib VS Code** (the FRC/WPILib fork of VS Code from [wpilib.org](https://docs.wpilib.org)).
 2. Install the **VMX-PI WPILib** extension (`Ctrl + Shift + X` → search **VMX**).
@@ -106,19 +122,37 @@ After that, you can deploy from the terminal (see below) or from the IDE.
 
 With your PC connected to the VMX network (Wi‑Fi `VMX-1234` or Ethernet):
 
+**macOS / Linux:**
+```bash
+cd /path/to/studica
+# If you use WPILib's JDK (optional): export JAVA_HOME="/path/to/wpilib/2026/jdk/..."
+./gradlew deploy
+```
+
+**Windows (PowerShell):**
 ```powershell
 cd "d:\my projects\studica"
 $env:JAVA_HOME = "C:\Users\Public\wpilib\2026\jdk\jdk-17.0.13+11"
 .\gradlew.bat deploy
 ```
 
-Or in WPILib VS Code: `Ctrl + Shift + P` → **WPILib: Deploy Robot Code**.
+In WPILib VS Code you can also use: `Ctrl + Shift + P` → **WPILib: Deploy Robot Code**.
 
 You should see **BUILD SUCCESSFUL**. The code is then on the robot and will start automatically.
 
 ### If you see "No more authentication methods available"
 
-That means the project is still targeting **roboRIO** (user `admin`). The VMX expects user **`pi`** and password **`raspberry`**. Follow the one-time steps above in **WPILib VS Code** to run **Change the deploy target to VMX-Pi**, then try `.\gradlew.bat deploy` again.
+That means the project is still targeting **roboRIO** (user `admin`). The VMX expects user **`pi`** and password **`raspberry`**. Do one of the following:
+
+- **Preferred:** Do the one-time **Change the deploy target to VMX-Pi** step (in Cursor if the VMX extension works, or in WPILib VS Code), then run `./gradlew deploy` again.
+- **Workaround from Cursor (no extension):** Build and copy the JAR to the VMX with user `pi`:
+  ```bash
+  ./gradlew build deployVmx
+  ```
+  When prompted, use password **`raspberry`**. Override VMX IP if needed: `./gradlew deployVmx -PVMX_IP=172.22.11.2`.  
+  **Note:** The JAR built with the default (RoboRIO) target may not run on the VMX Pi; for a VMX-compatible build you still need to run **Change the deploy target to VMX-Pi** once in WPILib VS Code, then use Cursor for editing and either `./gradlew deploy` or `./gradlew deployVmx`.
+
+Alternatively on macOS/Linux you can run `chmod +x deploy-vmx.sh` then `./deploy-vmx.sh` (same password when prompted).
 
 ---
 

@@ -65,3 +65,34 @@ jar {
 deployArtifact.jarTask = jar
 wpi.java.configureExecutableTasks(jar)
 wpi.java.configureTestTasks(test)
+
+// Optional: deploy JAR to Studica VMX via SCP (user pi, password: raspberry).
+// Use when deploy target is still RoboRIO: ./gradlew build deployVmx
+// Override VMX IP: ./gradlew deployVmx -PVMX_IP=172.22.11.2
+// Non-default SSH key: ./gradlew deployVmx -PVMX_SSH_KEY=~/.ssh/id_ed25519_work
+tasks.register('deployVmx') {
+    dependsOn jar
+    doLast {
+        def vmxIp = findProperty('VMX_IP') ?: '10.12.34.2'
+        def vmxUser = 'pi'
+        def jarFile = jar.archiveFile.get().asFile
+        def remoteDir = '/home/pi/deploy'
+        def remoteJar = "$remoteDir/frc.jar"
+        def knownHostsFile = file("${project.buildDir}/vmx_known_hosts").absolutePath
+        def sshOpts = ['-o', 'StrictHostKeyChecking=accept-new', '-o', "UserKnownHostsFile=${knownHostsFile}"]
+        def keyPath = findProperty('VMX_SSH_KEY')?.toString()?.replaceFirst('^~', System.getProperty('user.home'))
+        if (keyPath) {
+            sshOpts = ['-i', keyPath] + sshOpts
+        }
+        exec {
+            commandLine(['ssh'] + sshOpts + ["${vmxUser}@${vmxIp}", "mkdir -p $remoteDir"])
+            ignoreExitValue = false
+        }
+        exec {
+            commandLine(['scp'] + sshOpts + [jarFile.absolutePath, "${vmxUser}@${vmxIp}:${remoteJar}"])
+            ignoreExitValue = false
+        }
+        println "Deployed ${jarFile.name} to ${vmxUser}@${vmxIp}:${remoteJar}"
+        println "On VMX, run: cd $remoteDir && java -jar frc.jar"
+    }
+}
